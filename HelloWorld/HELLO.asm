@@ -17,19 +17,15 @@
         PUSH AF
         PUSH BC
         PUSH DE
-
-        LD A,2      ; set output stream to screen
+        
+        ; set output stream to screen
+        LD A,2      
         CALL 5633
 
-        LD A,22
-        RST 16
-        LD A,10
-        RST 16
-        LD A,8
-        RST 16
-
-        LD A,"X"
-        RST 16
+        ; output Hello world string
+        LD DE,HELLO_STR
+        LD BC,12
+        CALL 8252
 
         ; return old registry values
         POP DE
@@ -42,3 +38,4 @@
 ; GLOBAL VARIABLES AND DATA
 PROGRAM_STACK   DEFW #6000
 ALASM_STACK     DEFW #0000
+HELLO_STR       DEFB "Hello World!",0
