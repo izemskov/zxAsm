@@ -9,6 +9,9 @@
 ;AUTHOR:  Ilya Zemskov, 2021
 ;         pascal.ilya@gmail.com
 
+SCREEN_STREAM    EQU 5633
+PRINT_STRING     EQU 8252
+
         ORG #6000   ; start address
         ; save old stack value
         LD (ALASM_STACK),SP
@@ -20,12 +23,12 @@
         
         ; set output stream to screen
         LD A,2      
-        CALL 5633
+        CALL SCREEN_STREAM
 
         ; output Hello world string
         LD DE,HELLO_STR
         LD BC,12
-        CALL 8252
+        CALL PRINT_STRING
 
         ; return old registry values
         POP DE
