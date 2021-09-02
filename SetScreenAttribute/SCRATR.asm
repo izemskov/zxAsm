@@ -25,16 +25,18 @@ PRINT_STRING     EQU 8252
         ; set output stream to screen
         LD A,2      
         CALL SCREEN_STREAM
-        
-        LD BC,#0A08
-        LD A,%00110100
+
+        LD BC,#151E
+        LD D,%00110100
+LOOP2:  PUSH BC        
+LOOP1:  PUSH BC
         CALL SET_SCREEN_ATTR
-
-        ; output Hello world string
-        ;LD DE,HELLO_STR
-        ;LD BC,12
-        ;CALL PRINT_STRING
-
+        POP BC
+        DJNZ LOOP1        
+        POP BC
+        DEC C
+        JR NZ,LOOP2
+        
         ; return old registry values
         POP DE
         POP BC
@@ -61,8 +63,6 @@ SET_SCREEN_ATTR:
         LD A,C
         RST 16
 
-        LD AF,0
-
         ; Ink
         LD A,D
         AND %00000111
@@ -76,15 +76,18 @@ SET_SCREEN_ATTR:
         ; Paper
         LD A,D
         AND %00111000
-        RLCA
-        RLCA
-        RLCA
+        RRCA
+        RRCA
+        RRCA
               
         PUSH AF
         LD A,17
         RST 16
         POP AF
         RST 16 
+
+        LD A," "
+        RST 16
 
         POP AF
 
@@ -93,4 +96,3 @@ SET_SCREEN_ATTR:
 ; GLOBAL VARIABLES AND DATA
 PROGRAM_STACK   DEFW #6000
 ALASM_STACK     DEFW #0000
-HELLO_STR       DEFB "Hello World!",0
