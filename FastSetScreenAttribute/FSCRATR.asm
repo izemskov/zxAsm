@@ -90,7 +90,7 @@ SET_SCREEN_ATTR:
         ; C registry
         LD C,A
         
-        ; procee high part of Y
+        ; process high part of Y
         LD A,B
         AND %00111000
         RLCA
