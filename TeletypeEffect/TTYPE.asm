@@ -16,35 +16,55 @@ SCREEN_STREAM    EQU 5633
 PRINT_STRING     EQU 8252
 SCREEN_ATTRIB    EQU #5800
 SCREEN_ATTRIB_H  EQU #58
+IM2_I_REG        EQU #5B
+IM2_B_DATA       EQU #FF
 
         ORG #6000   ; start address
         ; save old stack value
 begin_file:        
-        ;save old registry values
+        ; save old registry values
         PUSH AF
         PUSH BC
         PUSH DE
         PUSH HL
+        
+        ; enable im2 interrupt
+        PUSH AF
+        PUSH DE
+        PUSH HL
+        
+        DI
+        
+        ; HL - IM2 addr
+        LD H,IM2_I_REG
+        LD L,IM2_B_DATA
+        LD A,H
+        LD I,A
+        
+        ; load callback to addres in HL
+        ; in reverse order
+        ; (in registry big endian in memory little endian)
+        LD DE,IM2
+        LD (HL),E
+        INC HL
+        LD (HL),D
+
+        ; enable IM2 interrupt
+        IM 2
+        
+        EI
+        
+        POP HL
+        POP DE
+        POP AF
 
         ; set output stream to screen
         LD A,2      
         CALL SCREEN_STREAM
         
-        ; wait 5/50 sec        
-        ;LD BC,1
-        ;CALL #1F3D
-
         LD A,%00000000
         CALL FILL_BACKGROUND
-        
-        ; wait 5/50 sec        
-        ;LD BC,1
-        ;CALL #1F3D
-        
-        ;LD BC,#0505
-        ;LD A,%00101101
-        ;CALL SET_SCREEN_ATTR
-        
+               
         LD DE,#0505
         LD HL,TTYPE_STR
         CALL TELETYPE_PRINT
@@ -55,6 +75,12 @@ begin_file:
         POP BC
         POP AF
         
+        RET
+    
+;INTERRUPT FUNCTION CALLED EVERY 1/50 SECOND    
+IM2:
+        DI
+        EI
         RET
 
 ;SET SCREEN ATTRIBUTE FUNCTION
@@ -171,8 +197,22 @@ LOOP1:  PUSH BC
 
         RET
         
+;DELAY FUNCTION
+;PARAMETERS:
+    ; A - Delay in 1/50 seconds
+IM2_DELAY:
+        PUSH AF
+        
+DLOOP:  HALT
+        DEC A
+        JR NZ,DLOOP
+        
+        POP AF
+        
+        RET
+        
 ;TELE TYPE OUT STRING FUNCTION
-;PARAMETERS:    
+;PARAMETERS:
     ; HL - Address of string
     ; DE - Y and X  start coordinates
 TELETYPE_PRINT:
@@ -204,10 +244,9 @@ TLOOP:
         ; output cursor
         LD A," "
         RST 16
-        
-        ; wait 5/50 sec        
-        ;LD BC,#0000
-        ;CALL 7997
+                       
+        LD A,10
+        CALL IM2_DELAY
         
         ; set symbol position
         LD A,22
@@ -245,7 +284,7 @@ ENDTLOOP:
         POP BC
         POP AF
     
-        RET
+        RET        
 
 ; GLOBAL VARIABLES AND DATA
 TTYPE_STR       DEFB "Tele type string!",0
