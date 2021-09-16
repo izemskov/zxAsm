@@ -67,48 +67,9 @@ begin_file:
         
         LD A,%01000101
         CALL FILL_BACKGROUND
-
-        PUSH BC
-        PUSH HL
-        PUSH AF
         
-        LD BC,SCREEN_DATA_SIZE        
-        LD HL,SCREEN_DATA        
-DATAL:  LD A,%10101010
-        LD (HL),A
-        INC HL
-        
-        LD A,1
-        CALL IM2_DELAY
-        
-        DEC BC
-        LD A,B
-        OR C
-        JR NZ,DATAL
-        
-        POP AF
-        POP HL
-        POP BC        
-        
-        ;LD BC,#0505
-        ;LD A,%00101000
-        ;CALL SET_SCREEN_ATTR        
-        
-        ;LD BC,#0506
-        ;LD A,%00101000
-        ;CALL SET_SCREEN_ATTR
-        
-        ;LD BC,#0605
-        ;LD A,%00101000
-        ;CALL SET_SCREEN_ATTR        
-
-        ;LD BC,#0505
-        ;LD HL,SPRITE_BLOCK
-        ;CALL SET_SCREEN_DATA
-        
-        ;LD BC,#0605
-        ;LD HL,SPRITE_BLOCK
-        ;CALL SET_SCREEN_DATA
+        LD HL,SPRITE_ALIEN
+        CALL DRAW_SPRITE
 
         ; return old registry values
         POP HL
@@ -261,6 +222,7 @@ SET_SCREEN_DATA:
         PUSH BC        
         PUSH AF
         PUSH HL
+        PUSH DE
         
         ; process low part of Y
         LD A,B
@@ -300,14 +262,26 @@ SET_SCREEN_DATA:
         
         ; write attribute param to
         ; address which stored in BC
-        LD A,170
-        LD (BC),A
-        INC BC
+
+        LD D,8
+SCREEN_DATA_LOOP:        
+        LD A,(HL)
         LD (BC),A
         
-        ;INT BC
-        ;LD (BC),A
+        PUSH HL
+        LD HL,BC
+        LD BC,256
+        ADD HL,BC
+        LD BC,HL
+        POP HL
+        
+        INC HL
 
+        DEC D
+        
+        JR NZ,SCREEN_DATA_LOOP
+
+        POP DE
         POP HL
         POP AF
         POP BC
@@ -315,15 +289,47 @@ SET_SCREEN_DATA:
         RET
         
 ;DRAW SPRITE FUNCTION
-;DRAW_SPRITE:
+;PARAMETERS:    
+    ; HL - Adress in memory
+DRAW_SPRITE:
+        PUSH HL
+        PUSH DE
         
+        ; get block counts
+        LD D,(HL)
+        
+        INC HL
+SPRINT_LOOP:
+        ; read coordinates
+        LD C,(HL)
+        INC HL
+        LD B,(HL)
+        INC HL
+        ; read attributes
+        LD A,(HL)
+        INC HL
+                
+        CALL SET_SCREEN_ATTR
+        CALL SET_SCREEN_DATA
+        
+        LD BC,8
+        ADD HL,BC
+        
+        DEC D
+        
+        JR NZ,SPRINT_LOOP
+                
+        POP DE
+        POP HL
+        
+        RET        
 
 ; GLOBAL VARIABLES AND DATA
-TTYPE_STR       DEFB "Tele type string!",0
-SYMBOL_ATTR     DEFB 16,4,17,0
-CURSOR_ATTR     DEFB 16,0,17,4
-
-SPRITE_BLOCK    DEFB 170,170,170,170,170,170,170,170
+SPRITE_ALIEN    DEFB 2
+                DEFB 5,5,69
+                DEFB 24,60,126,219,255,36,90,165
+                DEFB 6,5,69
+                DEFB 24,60,126,219,255,90,129,66
 
 end_file:
 
