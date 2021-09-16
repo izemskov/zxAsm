@@ -1,4 +1,5 @@
 # Изучение ассемблера ZX-Spectrum
+
 ## 1. HelloWorld
 Простой вывод строки с использованием функции ПЗУ 8252<br><br>
 ![Screenshot](HelloWorld/screen.png)
@@ -23,7 +24,7 @@
 ![Screenshot](StaticScreen/screen.png)
 
 ## 6. TeletypeEffect
-Эффект телетайпа. Первый эксперимент с использованием прерывания IM2. Через него реализована функция задержки<br><br>
+Эффект телетайпа. Первый эксперимент с использованием прерывания IM2 для реализации функции задержки<br><br>
 ![Screenshot](TeletypeEffect/screen.png)
 
 ## 7. DrawSprite
