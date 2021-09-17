@@ -24,9 +24,6 @@ SCREEN_DATA_SIZE EQU #1800
 IM2_I_REG        EQU #5B
 IM2_B_DATA       EQU #FF
 
-; TODO
-SCREEN_DATA_H    EQU #40
-SCREEN_DATA_SIZE EQU #1800
 
         ORG #6000   ; start address
         ; save old stack value
@@ -324,12 +321,18 @@ SCREEN_DATA_END:
     ; HL - Adress in memory
 DRAW_SPRITE:
         PUSH HL
-        PUSH DE
+        PUSH DE                                   
+                
+START_ANIMATION:
+        PUSH HL
         
         ; get block counts
-        LD D,(HL)
-        
+        LD D,(HL)        
         INC HL
+        ; get frame counts
+        LD E,(HL)
+        INC HL
+        
 SPRINT_LOOP:
         ; read coordinates
         LD C,(HL)
@@ -339,16 +342,32 @@ SPRINT_LOOP:
         ; read attributes
         LD A,(HL)
         INC HL
-                
+
+FRAME_LOOP:        
         CALL SET_SCREEN_ATTR
         CALL SET_SCREEN_DATA
         
+        PUSH BC
         LD BC,8
         ADD HL,BC
+        POP BC
+        
+        PUSH AF
+        LD A,15
+        CALL IM2_DELAY
+        POP AF
+        
+        DEC E               
+        
+        JR NZ,FRAME_LOOP
         
         DEC D
         
-        JR NZ,SPRINT_LOOP
+        JR NZ,SPRINT_LOOP               
+        
+        POP HL
+        
+        JR START_ANIMATION
                 
         POP DE
         POP HL
@@ -356,8 +375,8 @@ SPRINT_LOOP:
         RET        
 
 ; GLOBAL VARIABLES AND DATA
-SPRITE_ALIEN    DEFB 1
-                DEFB 30,21,69
+SPRITE_ALIEN    DEFB 1,2
+                DEFB 5,5,69
                 DEFB 24,60,126,219,255,36,90,165                
                 DEFB 24,60,126,219,255,90,129,66
 
