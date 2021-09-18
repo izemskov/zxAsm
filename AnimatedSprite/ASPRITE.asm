@@ -71,8 +71,48 @@ begin_file:
         LD A,%01000101
         CALL FILL_BACKGROUND
         
-        LD HL,SPRITE_ALIEN
+        LD A,1
+        LD BC,#0505
+ANIMATION_LOOP:
+        CP 1
+        JR Z,FRAME_1
+        CP 2
+        JR Z,FRAME_2
+
+ANIMATION_FRAME_SETTED:
         CALL DRAW_SPRITE
+        
+        PUSH AF
+        LD A,25
+        CALL IM2_DELAY
+        POP AF
+        
+        PUSH HL
+        LD HL,EMPTY_SPRITE
+        CALL DRAW_SPRITE
+        POP HL
+        
+        INC A
+        INC B
+        
+        PUSH AF
+        LD A,B
+        CP 19
+        JR Z,END_ANIMATION
+        POP AF
+        
+        JR ANIMATION_LOOP
+        
+FRAME_1:
+        LD HL,SPRITE_ALIEN_1
+        JR ANIMATION_FRAME_SETTED
+        
+FRAME_2:
+        LD HL,SPRITE_ALIEN_2
+        LD A,0
+        JR ANIMATION_FRAME_SETTED
+        
+END_ANIMATION:
         
         ; return old registry values
         POP HL
@@ -317,68 +357,58 @@ SCREEN_DATA_END:
         RET
         
 ;DRAW SPRITE FUNCTION
-;PARAMETERS:    
+;PARAMETERS:
+    ; BC - Y and X coordinates
     ; HL - Adress in memory
 DRAW_SPRITE:
+        PUSH AF
         PUSH HL
-        PUSH DE                                   
-                
-START_ANIMATION:
-        PUSH HL
+        PUSH DE        
         
         ; get block counts
         LD D,(HL)        
         INC HL
-        ; get frame counts
-        LD E,(HL)
-        INC HL
         
 SPRINT_LOOP:
         ; read coordinates
-        LD C,(HL)
+        LD A,(HL)
+        ADD A,C
+        LD C,A
         INC HL
-        LD B,(HL)
+        
+        LD A,(HL)
+        ADD A,B
+        LD B,A
         INC HL
         ; read attributes
         LD A,(HL)
         INC HL
-
-FRAME_LOOP:        
+        
         CALL SET_SCREEN_ATTR
         CALL SET_SCREEN_DATA
         
-        PUSH BC
-        LD BC,8
-        ADD HL,BC
-        POP BC
-        
-        PUSH AF
-        LD A,15
-        CALL IM2_DELAY
-        POP AF
-        
-        DEC E               
-        
-        JR NZ,FRAME_LOOP
-        
         DEC D
         
-        JR NZ,SPRINT_LOOP               
-        
-        POP HL
-        
-        JR START_ANIMATION
-                
+        JR NZ,SPRINT_LOOP
+                                
         POP DE
         POP HL
+        POP AF
         
         RET        
 
 ; GLOBAL VARIABLES AND DATA
-SPRITE_ALIEN    DEFB 1,2
-                DEFB 5,5,69
-                DEFB 24,60,126,219,255,36,90,165                
+SPRITE_ALIEN_1  DEFB 1
+                DEFB 0,0,69
+                DEFB 24,60,126,219,255,36,90,165
+
+SPRITE_ALIEN_2  DEFB 1
+                DEFB 0,0,69                
                 DEFB 24,60,126,219,255,90,129,66
+
+EMPTY_SPRITE    DEFB 1
+                DEFB 0,0,69                
+                DEFB 0,0,0,0,0,0,0,0
 
 end_file:
 
