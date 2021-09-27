@@ -71,15 +71,12 @@ begin_file:
         LD A,%01000101
         CALL FILL_BACKGROUND
         
-        LD A,1
+        ; start position
         LD BC,#0505
+        ; start frame
+        LD A,1
 ANIMATION_LOOP:
-        CP 1
-        JR Z,FRAME_1
-        CP 2
-        JR Z,FRAME_2
-
-ANIMATION_FRAME_SETTED:
+        LD HL,SPRITE_ALIEN
         CALL DRAW_SPRITE
         
         PUSH AF
@@ -88,31 +85,39 @@ ANIMATION_FRAME_SETTED:
         POP AF
         
         PUSH HL
+        PUSH AF
+        PUSH BC
+        LD A,1
         LD HL,EMPTY_SPRITE
         CALL DRAW_SPRITE
+        INC C
+        CALL DRAW_SPRITE
+        POP BC
+        POP AF
         POP HL
         
         INC A
+        
+        CP 3
+        JR Z,RESET_FRAME_COUNTER
+        JR CONTINUE_ANIMATION
+        
+RESET_FRAME_COUNTER:
+        LD A,1
+        
+CONTINUE_ANIMATION:
         INC B
         
         PUSH AF
         LD A,B
-        CP 19
-        JR Z,END_ANIMATION
+        CP 19                
+        JR Z,END_ANIMATION                
         POP AF
         
         JR ANIMATION_LOOP
         
-FRAME_1:
-        LD HL,SPRITE_ALIEN_1
-        JR ANIMATION_FRAME_SETTED
-        
-FRAME_2:
-        LD HL,SPRITE_ALIEN_2
-        LD A,0
-        JR ANIMATION_FRAME_SETTED
-        
 END_ANIMATION:
+        POP AF
         
         ; return old registry values
         POP HL
@@ -354,22 +359,33 @@ SCREEN_DATA_END:
         POP AF
         POP BC
 
-        RET
-        
+        RET        
+
 ;DRAW SPRITE FUNCTION
 ;PARAMETERS:
+    ; A  - Current frame
     ; BC - Y and X coordinates
-    ; HL - Adress in memory
+    ; HL - Sprite address
 DRAW_SPRITE:
         PUSH AF
+        PUSH BC
         PUSH HL
-        PUSH DE        
+        PUSH DE
         
         ; get block counts
-        LD D,(HL)        
+        LD D,(HL)
         INC HL
         
-SPRINT_LOOP:
+        ; frame counts
+        LD E,(HL)
+        INC HL
+
+START_DRAW_SP_FRAME:
+        ; save sprite coordinates
+        PUSH BC
+        ; save current frame
+        PUSH AF        
+        
         ; read coordinates
         LD A,(HL)
         ADD A,C
@@ -380,33 +396,102 @@ SPRINT_LOOP:
         ADD A,B
         LD B,A
         INC HL
+        
+        ; restore current frame
+        POP AF
+        
+        ; save current frame
+        PUSH AF
+        
+        ; save current coordinates
+        PUSH BC
+        
         ; read attributes
-        LD A,(HL)
+        LD B,(HL)
         INC HL
+                
+        ; skip frames to current       
+        ; just now in A registry I have current frame
+        PUSH DE
+        LD E,1
+START_SKIP_FRAME:
+        CP E
+        JR NZ,SKIP_FRAME
+        JR END_SKIP_FRAME
+        
+SKIP_FRAME:
+        PUSH BC
+        LD BC,8
+        ADD HL,BC
+        POP BC
+        INC E
+        JR START_SKIP_FRAME
+        
+END_SKIP_FRAME:
+        POP DE
+        
+        ; write attributes
+        LD A,B
+
+        ; restore cordinates
+        POP BC
         
         CALL SET_SCREEN_ATTR
         CALL SET_SCREEN_DATA
         
-        DEC D
+        ; shift outed frame
+        LD BC,8
+        ADD HL,BC
         
-        JR NZ,SPRINT_LOOP
-                                
-        POP DE
-        POP HL
+        ; restore current frame
         POP AF
         
-        RET        
+        ; save current frame
+        PUSH AF        
+        
+        ; skip other frames
+START_SKIP_FRAME2:        
+        CP E
+        JR NZ,SKIP_FRAME2
+        JR END_SKIP_FRAME2
+        
+SKIP_FRAME2:        
+        LD BC,8
+        ADD HL,BC
+        INC A
+        JR START_SKIP_FRAME2
+        
+END_SKIP_FRAME2:               
+        ; restore current frame
+        POP AF
+
+        ; restore sprite coordinates
+        POP BC
+        
+        DEC D
+        JR NZ,START_DRAW_SP_FRAME        
+
+        POP DE
+        POP HL
+        POP BC
+        POP AF
+
+        RET
 
 ; GLOBAL VARIABLES AND DATA
-SPRITE_ALIEN_1  DEFB 1
+SPRITE_ALIEN    DEFB 2,2                
                 DEFB 0,0,69
+                ; frame 1
+                DEFB 24,60,126,219,255,36,90,165
+                ; frame 2
+                DEFB 24,60,126,219,255,90,129,66
+                DEFB 1,0,69                
+                ; frame 1
+                DEFB 24,60,126,219,255,90,129,66
+                ; frame 2
                 DEFB 24,60,126,219,255,36,90,165
 
-SPRITE_ALIEN_2  DEFB 1
-                DEFB 0,0,69                
-                DEFB 24,60,126,219,255,90,129,66
-
-EMPTY_SPRITE    DEFB 1
+EMPTY_SPRITE    DEFB 1,1
                 DEFB 0,0,69                
                 DEFB 0,0,0,0,0,0,0,0
 
