@@ -30,3 +30,7 @@
 ## 7. DrawSprite
 Вывод спрайта на экран при помощи прямой работы с видеопамятью<br><br>
 ![Screenshot](DrawSprite/screen.png)
+
+## 8. AnimatedSprite
+Вывод многокадрового спрайта в движении<br><br>
+![Screenshot](AnimatedSprite/screen.gif)
