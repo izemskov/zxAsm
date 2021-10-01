@@ -34,3 +34,7 @@
 ## 8. AnimatedSprite
 Вывод многокадрового спрайта в движении<br><br>
 ![Screenshot](AnimatedSprite/screen.gif)
+
+## 9. KeyboardControl
+Управление спрайтом при помощи клавиш WASD<br><br>
+![Screenshot](KeyboardControl/screen.gif)
