@@ -74,20 +74,62 @@ begin_file:
         ; start frame
         LD A,1
         ; start position
-        LD HL,COORDINATES
+        LD HL,PLAYER_COORD
         LD (HL),#05
         INC HL
         LD (HL),#05        
+        INC HL
+        LD (HL),0
+        INC HL
+        LD (HL),#05
+        INC HL
+        LD (HL),#05
         
 MAIN_LOOP:
         HALT
-
+        
         ; load player coordinates
-        LD HL,COORDINATES
+        LD HL,PLAYER_COORD
+        LD B,(HL)
+        INC HL
+        LD C,(HL)        
+        
+        ; check player coordinates changes
+        PUSH AF
+        
+        INC HL
+        LD A,(HL)
+        CP 1
+        JR Z,CLEAR_PLAYER
+        JR NOT_CLEAR_PLAYER
+        
+CLEAR_PLAYER:
+        ; for next time
+        LD (HL),0
+        
+        PUSH HL
+        PUSH BC               
+        
+        ; load old coordinates        
+        INC HL
         LD B,(HL)
         INC HL
         LD C,(HL)
-        LD HL,SPRITE_PLAYER        
+        LD HL,EMPTY_SPRITE4
+        CALL DRAW_SPRITE
+        
+        POP BC       
+        POP HL
+        
+        INC HL
+        LD (HL),B
+        INC HL
+        LD (HL),C
+        
+NOT_CLEAR_PLAYER:
+        POP AF
+                
+        LD HL,SPRITE_PLAYER
         CALL DRAW_SPRITE
                        
         ;PUSH AF
@@ -114,46 +156,218 @@ IM2:
         PUSH AF
         
         ; check keys
-        LD A,251       ; Q - Key
+        ;;;;;;;;;;;;
+        ; W - Key
+        ;;;;;;;;;;;;
+        LD A,251
         IN A,(254)        
-        BIT 0,A
-        JR Z,P_KEY_Q
-        JR NP_KEY_Q
+        BIT 1,A
+        JR Z,P_KEY_W
+        JR NP_KEY_W
         
-P_KEY_Q:
-        ; Q - pressed
-        LD HL,KEY_INFO_Q
+P_KEY_W:
+        ; W - pressed
+        LD HL,KEY_INFO_W
+        LD A,(HL)
+        CP 0
+        JR Z,MOVE_UP
+        JR CONTINUE_P_KEY_W
+        
+MOVE_UP:        
+        PUSH HL
+        PUSH AF
+        LD HL,PLAYER_COORD
+        LD B,(HL)
+        LD A,B
+        CP 0
+        JR Z,BOUND_UP
+        DEC B
+BOUND_UP:        
+        LD (HL),B
+        ; set flag to need clear old sprite
+        INC HL
+        INC HL
+        LD (HL),1
+        POP AF
+        POP HL
+        
+CONTINUE_P_KEY_W:
+        INC A
+        CP 10
+        JR Z,DROP_KEY_W
+        JR WRITE_KEY_W
+        
+DROP_KEY_W:
+        LD A,0
+
+WRITE_KEY_W:
+        LD (HL),A
+        JR AFTER_PROCESS_W
+        
+NP_KEY_W:
+        LD HL,KEY_INFO_W
+        LD (HL),0
+        
+AFTER_PROCESS_W:
+        ;;;;;;;;;;;;
+        ; S - Key
+        ;;;;;;;;;;;;
+        LD A,253
+        IN A,(254)        
+        BIT 1,A
+        JR Z,P_KEY_S
+        JR NP_KEY_S
+        
+P_KEY_S:
+        ; S - pressed
+        LD HL,KEY_INFO_S
         LD A,(HL)
         CP 0
         JR Z,MOVE_DOWN
-        JR CONTINUE_P_KEY_Q
+        JR CONTINUE_P_KEY_S
         
 MOVE_DOWN:        
         PUSH HL
-        LD HL,COORDINATES
+        PUSH AF
+        LD HL,PLAYER_COORD
         LD B,(HL)
+        LD A,B
+        CP 22
+        JR Z,BOUND_DOWN
         INC B
-        LD (HL),B        
+BOUND_DOWN:        
+        LD (HL),B
+        ; set flag to need clear old sprite
+        INC HL
+        INC HL
+        LD (HL),1
+        POP AF
         POP HL
         
-CONTINUE_P_KEY_Q:
+CONTINUE_P_KEY_S:
         INC A
         CP 10
-        JR Z,DROP_KEY_Q
-        JR WRITE_KEY_Q
+        JR Z,DROP_KEY_S
+        JR WRITE_KEY_S
         
-DROP_KEY_Q:
+DROP_KEY_S:
         LD A,0
 
-WRITE_KEY_Q:
+WRITE_KEY_S:
         LD (HL),A
-        JR AFTER_PROCESS_Q
+        JR AFTER_PROCESS_S
         
-NP_KEY_Q:
-        LD HL,KEY_INFO_Q
+NP_KEY_S:
+        LD HL,KEY_INFO_S
         LD (HL),0
         
-AFTER_PROCESS_Q:
+AFTER_PROCESS_S:
+        ;;;;;;;;;;;;
+        ; A - Key
+        ;;;;;;;;;;;;
+        LD A,253
+        IN A,(254)        
+        BIT 0,A
+        JR Z,P_KEY_A
+        JR NP_KEY_A
+        
+P_KEY_A:
+        ; A - pressed
+        LD HL,KEY_INFO_A
+        LD A,(HL)
+        CP 0
+        JR Z,MOVE_LEFT
+        JR CONTINUE_P_KEY_A
+        
+MOVE_LEFT:        
+        PUSH HL
+        PUSH AF
+        LD HL,PLAYER_COORD
+        INC HL
+        LD B,(HL)
+        LD A,B
+        CP 0
+        JR Z,BOUND_LEFT
+        DEC B
+BOUND_LEFT:        
+        LD (HL),B
+        ; set flag to need clear old sprite
+        INC HL        
+        LD (HL),1
+        POP AF
+        POP HL
+        
+CONTINUE_P_KEY_A:
+        INC A
+        CP 10
+        JR Z,DROP_KEY_A
+        JR WRITE_KEY_A
+        
+DROP_KEY_A:
+        LD A,0
+
+WRITE_KEY_A:
+        LD (HL),A
+        JR AFTER_PROCESS_A
+        
+NP_KEY_A:
+        LD HL,KEY_INFO_A
+        LD (HL),0
+        
+AFTER_PROCESS_A:      
+        ;;;;;;;;;;;;
+        ; D - Key
+        ;;;;;;;;;;;;
+        LD A,253
+        IN A,(254)        
+        BIT 2,A
+        JR Z,P_KEY_D
+        JR NP_KEY_D
+        
+P_KEY_D:
+        ; D - pressed
+        LD HL,KEY_INFO_D
+        LD A,(HL)
+        CP 0
+        JR Z,MOVE_RIGHT
+        JR CONTINUE_P_KEY_D
+        
+MOVE_RIGHT:        
+        PUSH HL
+        PUSH AF
+        LD HL,PLAYER_COORD
+        INC HL
+        LD B,(HL)
+        LD A,B
+        CP 30
+        JR Z,BOUND_RIGHT
+        INC B
+BOUND_RIGHT:        
+        LD (HL),B
+        ; set flag to need clear old sprite
+        INC HL        
+        LD (HL),1
+        POP AF
+        POP HL
+        
+CONTINUE_P_KEY_D:
+        INC A
+        CP 10
+        JR Z,DROP_KEY_D
+        JR WRITE_KEY_D
+        
+DROP_KEY_D:
+        LD A,0
+
+WRITE_KEY_D:
+        LD (HL),A
+        JR AFTER_PROCESS_D
+        
+NP_KEY_D:
+        LD HL,KEY_INFO_D
+        LD (HL),0
+        
+AFTER_PROCESS_D:
 
         POP AF        
         POP BC
@@ -395,6 +609,9 @@ SCREEN_DATA_END:
     ; A  - Current frame
     ; BC - Y and X coordinates
     ; HL - Sprite address
+    ; D  - Mode:
+    ;           0 - Simple draw
+    ;           
 DRAW_SPRITE:
         PUSH AF
         PUSH BC
@@ -519,9 +736,25 @@ SPRITE_PLAYER   DEFB 4,1
                 DEFB 1,1,69
                 DEFB 124,238,226,240,24,8,0,0
                 
-COORDINATES     DEFB 0,0
+EMPTY_SPRITE4   DEFB 4,1
+                DEFB 0,0,69
+                DEFB 0,0,0,0,0,0,0,0
+                DEFB 1,0,69
+                DEFB 0,0,0,0,0,0,0,0
+                DEFB 0,1,69
+                DEFB 0,0,0,0,0,0,0,0
+                DEFB 1,1,69
+                DEFB 0,0,0,0,0,0,0,0
                 
-KEY_INFO_Q      DEFB 0
+                ; 0,1 - current coordinates
+                ; 2   - flag changes coordinates
+                ; 3,4 - old coordinates
+PLAYER_COORD    DEFB 0,0,0,0,0
+                
+KEY_INFO_W      DEFB 0
+KEY_INFO_S      DEFB 0
+KEY_INFO_A      DEFB 0
+KEY_INFO_D      DEFB 0
 
 end_file:
 
