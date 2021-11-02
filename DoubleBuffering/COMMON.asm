@@ -24,6 +24,15 @@ SHADOW_SCREEN_1_H EQU #80
 SHADOW_SCREEN_2_H EQU #88
 SHADOW_SCREEN_3_H EQU #90
 
+EMPTY_SCREEN      EQU #9800
+
+IM2_I_REG        EQU #5B
+IM2_B_DATA       EQU #FF
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;; SCREEN WORKING ;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; SET SCREEN ATTRIBUTE FUNCTION ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -202,7 +211,51 @@ SCREEN_DATA_END:
         POP AF
         POP BC
 
-        RET          
+        RET
+        
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; FILL BACKGROUND FUNCTION ;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;        
+;PARAMETERS:
+    ; A  - ATTRIBUTES
+    ; 0..3 - Ink
+    ; 4..6 - Paper
+    ; 5    - Bright
+    ; 6    - Flash
+FILL_BACKGROUND:
+        PUSH BC
+        PUSH DE
+
+        ; count of iterations
+        LD BC,#2018
+        ; current coordinates
+        LD DE,#0000
+LOOP2:  PUSH BC
+        PUSH DE
+
+LOOP1:  PUSH BC
+        LD B,D
+        LD C,E
+        CALL SET_SCREEN_ATTR
+        INC E
+        POP BC
+        DJNZ LOOP1
+
+        POP DE
+        INC D
+
+        POP BC
+        DEC C
+        JR NZ,LOOP2        
+
+        POP DE
+        POP BC
+
+        RET   
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;; SPRITE WORKING ;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;
 ; DRAW SPRITE FUNCTION ;
@@ -322,11 +375,14 @@ END_SKIP_FRAME2:
         POP AF
 
         RET
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;; SHADOW SCREEN WORKING ;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
                
 ;;;;;;;;;;;;;;;;;;;;;;;        
 ; COPY SHADOW SCREEN  ;
 ;;;;;;;;;;;;;;;;;;;;;;;
-; TODO - add description
 COPY_SHADOW_SCREEN:
         PUSH AF
         PUSH BC
@@ -343,45 +399,78 @@ COPY_SHADOW_SCREEN:
         POP BC
         POP AF
         
-        RET        
+        RET
+
+;;;;;;;;;;;;;;;;;;;;;;;;
+; PREPARE_EMPTY_SCREEN ;
+;;;;;;;;;;;;;;;;;;;;;;;;
+PREPARE_EMPTY_SCREEN:
+        PUSH BC
+        PUSH HL
+        PUSH AF
         
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-; FILL BACKGROUND FUNCTION ;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;        
-;PARAMETERS:
-    ; A  - ATTRIBUTES
-    ; 0..3 - Ink
-    ; 4..6 - Paper
-    ; 5    - Bright
-    ; 6    - Flash
-FILL_BACKGROUND:
+        LD BC,SCREEN_DATA_SIZE
+        LD HL,EMPTY_SCREEN
+FILL_EMPTY_SCREEN_LOOP:        
+        LD (HL),%00000000
+        INC HL  
+        DEC BC
+        LD A,B
+        OR C
+        JR NZ,FILL_EMPTY_SCREEN_LOOP        
+        
+        POP AF
+        POP HL
+        POP BC
+
+        RET
+
+;;;;;;;;;;;;;;;;;;;;;;;
+; CLEAR_SHADOW_SCREEN ;
+;;;;;;;;;;;;;;;;;;;;;;;
+CLEAR_SHADOW_SCREEN:
+        PUSH AF
         PUSH BC
         PUSH DE
-
-        ; count of iterations
-        LD BC,#2018
-        ; current coordinates
-        LD DE,#0000
-LOOP2:  PUSH BC
-        PUSH DE
-
-LOOP1:  PUSH BC
-        LD B,D
-        LD C,E
-        CALL SET_SCREEN_ATTR
-        INC E
-        POP BC
-        DJNZ LOOP1
-
-        POP DE
-        INC D
-
-        POP BC
-        DEC C
-        JR NZ,LOOP2        
-
+        PUSH HL
+        
+        LD BC,SCREEN_DATA_SIZE
+        LD HL,EMPTY_SCREEN
+        LD DE,SHADOW_SCREEN
+        LDIR
+        
+        POP HL
         POP DE
         POP BC
+        POP AF
 
-        RET       
+        RET
+        
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;; INTERRUPTION WORKING ;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;        
+        
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; INTERRUPT FUNCTION CALLED EVERY 1/50 SECOND ;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+IM2:
+        DI
+        EI
+        RET
+        
+;;;;;;;;;;;;;;;;;;
+; DELAY FUNCTION ;
+;;;;;;;;;;;;;;;;;;
+;PARAMETERS:
+    ; A - Delay in 1/50 seconds
+IM2_DELAY:
+        PUSH AF
+        
+DLOOP:  HALT
+        DEC A
+        JR NZ,DLOOP
+        
+        POP AF
+        
+        RET        
         

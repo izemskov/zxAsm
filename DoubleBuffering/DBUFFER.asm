@@ -14,9 +14,6 @@
 
 SCREEN_STREAM    EQU 5633
 
-IM2_I_REG        EQU #5B
-IM2_B_DATA       EQU #FF
-
         ORG #6000   ; start address
         ; save old stack value
 begin_file:        
@@ -63,56 +60,9 @@ begin_file:
         LD A,%01000101
         CALL FILL_BACKGROUND
         
-;;;;;;;;;;;;;;;;; SIMPLE SCREEN FILL ;;;;;;;;;;;;;;;;;        
-        
-        ;LD BC,SCREEN_DATA_SIZE
-        ;LD HL,SCREEN_DATA
-;TEST_SCREEN_LOOP:        
-        ;LD (HL),%10101010
-        ;INC HL  
-        ;LD A,2
-        ;CALL IM2_DELAY
-        ;DEC BC
-        ;LD A,B
-        ;OR C
-        ;JR NZ,TEST_SCREEN_LOOP
-        
-;;;;;;;;;;;;;;;;; SIMPLE SCREEN FILL ;;;;;;;;;;;;;;;;;                
+        CALL PREPARE_EMPTY_SCREEN            
 
-;;;;;;;;;;;;;;;;; DOUBLE BUFFERING SCREEN FILL ;;;;;;;;;;;;;;;;;
-        
-        ;LD BC,SCREEN_DATA_SIZE
-        ;LD HL,SHADOW_SCREEN
-;TEST_SCREEN_LOOP:        
-        ;LD (HL),%10101010
-        ;INC HL  
-        ;LD A,2
-        ;CALL IM2_DELAY
-        
-        ;CALL COPY_SHADOW_SCREEN
-        
-        ;DEC BC
-        ;LD A,B
-        ;OR C
-        ;JR NZ,TEST_SCREEN_LOOP               
-        
-;;;;;;;;;;;;;;;;; DOUBLE BUFFERING SCREEN FILL ;;;;;;;;;;;;;;;;;
-
-
-;;;;;;;;;;;;;;;;; DOUBLE BUFFERING DRAW SPRITE ;;;;;;;;;;;;;;;;;
-        ; start position
-        LD BC,#0505
-        ; start frame
-        LD A,1
-        
-        LD HL,SPRITE_ALIEN
-        CALL DRAW_SPRITE
-        
-        CALL COPY_SHADOW_SCREEN
-        
-;;;;;;;;;;;;;;;;; DOUBLE BUFFERING DRAW SPRITE ;;;;;;;;;;;;;;;;;        
-
-        ;CALL SPRITE_ANIMATION
+        CALL SPRITE_ANIMATION
         
         ; return old registry values
         POP HL
@@ -121,26 +71,6 @@ begin_file:
         POP AF
         
         RET
-    
-;INTERRUPT FUNCTION CALLED EVERY 1/50 SECOND    
-IM2:
-        DI
-        EI
-        RET
-        
-;DELAY FUNCTION
-;PARAMETERS:
-    ; A - Delay in 1/50 seconds
-IM2_DELAY:
-        PUSH AF
-        
-DLOOP:  HALT
-        DEC A
-        JR NZ,DLOOP
-        
-        POP AF
-        
-        RET              
         
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ; SPRITE ANIMATION FUNCTION ;
@@ -156,25 +86,18 @@ SPRITE_ANIMATION:
         ; start frame
         LD A,1
 ANIMATION_LOOP:
+        CALL CLEAR_SHADOW_SCREEN
+
         LD HL,SPRITE_ALIEN
         CALL DRAW_SPRITE
+        
+        HALT
+        CALL COPY_SHADOW_SCREEN
         
         PUSH AF
         LD A,25
         CALL IM2_DELAY
-        POP AF
-        
-        PUSH HL
-        PUSH AF
-        PUSH BC
-        LD A,1
-        LD HL,EMPTY_SPRITE
-        CALL DRAW_SPRITE
-        INC C
-        CALL DRAW_SPRITE
-        POP BC
-        POP AF
-        POP HL
+        POP AF               
         
         INC A
         
@@ -186,9 +109,7 @@ RESET_FRAME_COUNTER:
         LD A,1
         
 CONTINUE_ANIMATION:
-        INC B
-        
-        CALL COPY_SHADOW_SCREEN
+        INC B               
         
         PUSH AF
         LD A,B
@@ -222,10 +143,6 @@ SPRITE_ALIEN    DEFB 2,2
                 DEFB 24,60,126,219,255,90,129,66
                 ; frame 2
                 DEFB 24,60,126,219,255,36,90,165
-
-EMPTY_SPRITE    DEFB 1,1
-                DEFB 0,0,69                
-                DEFB 0,0,0,0,0,0,0,0
 
 end_file:
 
