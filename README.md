@@ -38,3 +38,7 @@
 ## 9. KeyboardControl
 ”правление спрайтом при помощи клавиш WASD<br><br>
 ![Screenshot](KeyboardControl/screen.gif)
+
+## 10. ScoreWorker
+—четчик очков<br><br>
+![Screenshot](ScoreWorker/screen.gif)

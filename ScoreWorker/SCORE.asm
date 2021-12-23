@@ -54,16 +54,30 @@ begin_file:
         POP AF
 
         ; set output stream to screen
-        LD A,2      
+        LD A,2
         CALL SCREEN_STREAM
         
         LD A,%01000101
         CALL FILL_BACKGROUND
         
+        LD BC,10000
+MAIN_SCORE_LOOP:
+        PUSH BC
+
         CALL PREPARE_EMPTY_SCREEN
         
+        CALL INC_SCORE
         CALL DRAW_SCORE
         
+        LD A,3
+        CALL IM2_DELAY
+                                     
+        POP BC
+        DEC BC
+        LD A,B
+        OR C
+        JR NZ,MAIN_SCORE_LOOP
+                              
         ; return old registry values
         POP HL
         POP DE
@@ -119,6 +133,58 @@ SCORE_LOOP:
 
         RET
         
+;;;;;;;;;;;;;
+; INC SCORE ;
+;;;;;;;;;;;;;
+INC_SCORE:
+        PUSH HL
+        PUSH AF
+        PUSH DE
+        
+        LD HL,SCORES
+        INC HL
+        INC HL
+        INC HL
+        LD A,(HL)
+        INC A
+        LD (HL),A
+        
+        ; check digit overflow
+CHECK_DIGIT_OVERFLOW:
+        LD A,(HL)
+        CP 10
+        JR Z,DIGIT_OVERFLOW
+        JR END_INC_SCORE
+        
+DIGIT_OVERFLOW:
+        LD A,0
+        LD (HL),A
+        
+        ; check last digit
+        LD DE,SCORES
+        LD A,H
+        CP D
+        JR NZ,NOT_LAST_DIGIT
+        LD A,L
+        CP E
+        JR NZ,NOT_LAST_DIGIT
+        ; last digit
+        JR END_INC_SCORE
+        
+NOT_LAST_DIGIT:        
+        DEC HL
+        LD A,(HL)
+        INC A
+        LD (HL),A
+        JR CHECK_DIGIT_OVERFLOW
+        
+END_INC_SCORE:
+        POP DE
+        POP AF
+        POP HL
+
+        RET
+        
         INCLUDE "COMMON.asm"
 
 ; GLOBAL VARIABLES AND DATA
@@ -135,7 +201,7 @@ NUMBER  DEFB 1,10
         DEFB 0,60,102,60,102,102,60,0    ; 8
         DEFB 0,60,102,102,62,6,60,0      ; 9
         
-SCORES  DEFB 5,3,6,4
+SCORES  DEFB 9,8,8,5
 
 end_file:
 
